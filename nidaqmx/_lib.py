@@ -223,6 +223,7 @@ class DaqLibImporter(object):
             if find_library(lib_name) is not None:
                 cdll = ctypes.cdll.LoadLibrary(find_library(lib_name))
                 windll = cdll
+                is_mxbase = True
             else:
                 raise DaqNotFoundError(
                     'Could not find an installation of NI-DAQmx. Please '
