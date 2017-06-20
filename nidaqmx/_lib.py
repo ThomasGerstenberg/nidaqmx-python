@@ -131,10 +131,14 @@ class DaqFunctionImporter(object):
     supported in the current version of the API.
     """
 
-    def __init__(self, library):
+    def __init__(self, library, is_mxbase):
+        self.is_mxbase = is_mxbase
         self._library = library
 
     def __getattr__(self, function):
+        if self.is_mxbase:
+            function = function.replace("DAQmx", "DAQmxBase")
+
         try:
             return getattr(self._library, function)
         except AttributeError:
@@ -154,6 +158,7 @@ class DaqLibImporter(object):
         self._cdll = None
         self._cal_handle = None
         self._task_handle = None
+        self._is_mxbase = False
 
     @property
     def windll(self):
@@ -188,6 +193,7 @@ class DaqLibImporter(object):
 
         windll = None
         cdll = None
+        is_mxbase = False
 
         if sys.platform.startswith('win') or sys.platform.startswith('cli'):
             lib_name = "nicaiu"
@@ -225,8 +231,9 @@ class DaqLibImporter(object):
         else:
             raise DaqNotFoundError("Platform {} currently not supported".format(sys.platform))
 
-        self._windll = DaqFunctionImporter(windll)
-        self._cdll = DaqFunctionImporter(cdll)
+        self._windll = DaqFunctionImporter(windll, is_mxbase)
+        self._cdll = DaqFunctionImporter(cdll, is_mxbase)
+        self._is_mxbase = is_mxbase
 
     def _parse_typedefs(self):
         """
@@ -238,11 +245,15 @@ class DaqLibImporter(object):
 
         # If DAQmx 8.8 and lower, TaskHandle is a typedef for uInt32 since
         # DAQmx didn't support 64-bit applications then.
-        version = system.driver_version
-        if version.major_version <= 8 and version.minor_version <= 8:
-            self._task_handle = ctypes.c_uint
-        else:
+        # DAQmxBase doesn't have a driver version, assume 64-bit
+        if self._is_mxbase:
             self._task_handle = ctypes.c_void_p
+        else:
+            version = system.driver_version
+            if version.major_version <= 8 and version.minor_version <= 8:
+                self._task_handle = ctypes.c_uint
+            else:
+                self._task_handle = ctypes.c_void_p
 
         self._cal_handle = ctypes.c_uint
 
