@@ -191,23 +191,39 @@ class DaqLibImporter(object):
 
         if sys.platform.startswith('win') or sys.platform.startswith('cli'):
             lib_name = "nicaiu"
-            if 'iron' in platform.python_implementation().lower():
-                windll = ctypes.windll.nicaiu
-                cdll = ctypes.cdll.nicaiu
-            else:
-                windll = ctypes.windll.LoadLibrary(lib_name)
-                cdll = ctypes.cdll.LoadLibrary(lib_name)
+            try:
+                if 'iron' in platform.python_implementation().lower():
+                    windll = ctypes.windll.nicaiu
+                    cdll = ctypes.cdll.nicaiu
+                else:
+                    windll = ctypes.windll.LoadLibrary(lib_name)
+                    cdll = ctypes.cdll.LoadLibrary(lib_name)
+            except WindowsError as e:
+                raise DaqNotFoundError(e)
 
         elif sys.platform.startswith('linux'):
+            lib_name = "nidaqmx"
             # On linux you can use the command find_library('nidaqmx')
-            if find_library('nidaqmx') is not None:
-                cdll = ctypes.cdll.LoadLibrary(find_library('nidaqmx'))
+            if find_library(lib_name) is not None:
+                cdll = ctypes.cdll.LoadLibrary(find_library(lib_name))
                 windll = cdll
             else:
                 raise DaqNotFoundError(
                     'Could not find an installation of NI-DAQmx. Please '
                     'ensure that NI-DAQmx is installed on this machine or '
                     'contact National Instruments for support.')
+        elif sys.platform.startswith("darwin"):
+            lib_name = "nidaqmxbase"
+            if find_library(lib_name) is not None:
+                cdll = ctypes.cdll.LoadLibrary(lib_name)
+                windll = cdll
+            else:
+                raise DaqNotFoundError(
+                    'Could not find an installation of NI-DAQmx. Please '
+                    'ensure that NI-DAQmx is installed on this machine or '
+                    'contact National Instruments for support.')
+        else:
+            raise DaqNotFoundError("Platform {} currently not supported".format(sys.platform))
 
         self._windll = DaqFunctionImporter(windll)
         self._cdll = DaqFunctionImporter(cdll)
