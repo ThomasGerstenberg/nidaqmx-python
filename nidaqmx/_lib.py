@@ -241,6 +241,9 @@ class DaqLibImporter(object):
         Determines the ctypes data types of the Task and Cal handles 
         based on the version of the NI-DAQmx driver installed.
         """
+        if self._windll is None:
+            self._import_lib()
+
         from nidaqmx.system.system import System
         system = System.local()
 
