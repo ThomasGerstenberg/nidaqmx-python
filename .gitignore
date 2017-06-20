@@ -12,6 +12,9 @@
 .idea/dynamic.xml
 .idea/uiDesigner.xml
 
+# python binaries
+*.py[cod]
+
 # build outputs
 build/
 dist/
