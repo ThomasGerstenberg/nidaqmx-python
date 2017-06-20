@@ -215,7 +215,7 @@ class DaqLibImporter(object):
         elif sys.platform.startswith("darwin"):
             lib_name = "nidaqmxbase"
             if find_library(lib_name) is not None:
-                cdll = ctypes.cdll.LoadLibrary(lib_name)
+                cdll = ctypes.cdll.LoadLibrary(find_library(lib_name))
                 windll = cdll
             else:
                 raise DaqNotFoundError(
